@@ -13,6 +13,7 @@ A simple android client wrapper for - [luna](https://github.com/adigunhammedolal
 `git clone https://github.com/adigunhammedolalekan/luna-android`
 
 * Add module `luna` to your project
+	`implementation project(':luna')`
 
 * Set it up inside your app `Application.kt` class
 
