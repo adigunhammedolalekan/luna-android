@@ -1,10 +1,11 @@
 # luna-android
-A simple android client wrapper around - [luna](https://github.com/adigunhammedolalekan/luna)
+A simple android client wrapper for - [luna](https://github.com/adigunhammedolalekan/luna)
 
 ## Features
 * Handled websocket connection
 * Handled websocket auto-reconnect on error or io failure
 * Handled channel subscription
+* Handled channel unSubscription
 
 ## How to
 
@@ -28,7 +29,7 @@ class App : Application() {
 }
 ```
 
-In your activity/fragment or viewmodel? Create a channel and start listening to messages
+In your activity/fragment or viewmodel? Create/subscribe to a channel and start listening for messages
 
 ```Kotlin
 var mChannel: Channel? = null
@@ -38,7 +39,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.layout_main)
 
-    mChannel = Channel("/rooms/22/message") //create channel. String parameter `/rooms/22/message` could be any channel name
+    mChannel = Channel("/rooms/22/message") //create and subscribe to channel. String parameter `/rooms/22/message` could be any channel path
 
     //Start listening for messages
     mChannel?.listener(object: Channel.Listener {
@@ -49,6 +50,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
     })
 }
 ```
+
 Send message to channel. You can send any object, it'll be converted to json automatically under the hood.
 
 ```Kotlin
@@ -58,9 +60,10 @@ class Message (
             val from: String = ""
     )
 ```
-Send message
+Send message to channel.
 ```Kotlin
 val message = Message("Hello, World!", "L3kanAdigun")
 mChannel.sendMessage(message)
 ```
 
+Follow me on Twitter [@L3kanAdigun](https://twitter.com/L3kanAdigun), my DM is open, come ask me questions!
