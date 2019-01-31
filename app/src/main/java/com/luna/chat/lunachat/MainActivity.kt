@@ -7,22 +7,20 @@ import kotlinx.android.synthetic.main.layout_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    var mChannel: Channel? = null
+    private lateinit var channel: Channel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.layout_main)
 
         var message: String = ""
-        mChannel = Channel("/rooms/22/message")
+       channel = Channel("/rooms/22/message")
 
-        mChannel?.listener(object: Channel.Listener {
-            override fun onMessage(data: String?) {
+        channel.channelListener = { data ->
 
-                tv_message.text = ""
-                message += data
-                tv_message.text = message
-            }
-        })
+            tv_message.text = ""
+            message += data
+            tv_message.text = message
+        }
 
         btn_send.setOnClickListener {
 
@@ -30,7 +28,7 @@ class MainActivity : AppCompatActivity() {
             if (!text.isEmpty()) {
 
                 val newMessage = Message(text.toString(), "lunaAndroid")
-                mChannel?.sendMessage(newMessage)
+                channel.sendMessage(newMessage)
                 edt_message.text.clear()
             }
         }

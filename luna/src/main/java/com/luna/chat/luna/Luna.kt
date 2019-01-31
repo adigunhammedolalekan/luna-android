@@ -9,29 +9,29 @@ class Luna private constructor(config: Config) {
 
     private var mWebsocket: WebSocket? = null
 
-    //Keep tracks of Websocket connection state
+    // Keep tracks of Websocket connection state
     private var mConnectionState: WebsocketClient.ConnectionState = WebsocketClient.ConnectionState.UNCONNECTED
     private var okHttpClient: OkHttpClient = OkHttpClient.Builder().build()
     private var mConfig: Config? = config
-    private var mObservers = HashMap<String, WsListener>()
+    private var mObservers = hashMapOf<String, WsListener>()
 
     init {
         connect()
     }
 
-    class Config {
-        var mUri: String = ""
-
-    }
-
     companion object {
 
-        public var instance: Luna? = null
+        private lateinit var INSTANCE: Luna
         fun create(config: Config) {
-            if (instance == null) {
-                instance = Luna(config)
+            if (INSTANCE == null) {
+
+                synchronized(this) {
+                    INSTANCE = Luna(config)
+                }
             }
         }
+
+        fun getInstance() = INSTANCE
     }
 
     private fun connect() {
@@ -40,16 +40,26 @@ class Luna private constructor(config: Config) {
                 mConnectionState == WebsocketClient.ConnectionState.CONNECTED) return
 
         mConnectionState = WebsocketClient.ConnectionState.CONNECTING
-        val url = mConfig?.mUri
+        val url = mConfig?.getURL()
         try {
-            val request = Request.Builder().url(url).build()
+            val builder = Request.Builder().url(url)
+            val headers = mConfig?.getHeaders()
+
+            // add request headers
+            headers?.forEach { key, value ->
+                builder.addHeader(key, value)
+            }
+
+            val request = builder.build()
             mWebsocket = okHttpClient.newWebSocket(request, WebsocketClient(object: WsListener {
 
                 override fun onConnect() {
 
                     mConnectionState = WebsocketClient.ConnectionState.CONNECTED
-                    mObservers.forEach {next ->
-                        val subscribeMessage = WsMessage("subscribe", next.key, null)
+
+                    // auto subscribe on connection established
+                    mObservers.forEach {(key, value) ->
+                        val subscribeMessage = WsMessage("subscribe", key, null)
                         val json = Gson().toJson(subscribeMessage)
 
                         send(json)
@@ -60,11 +70,11 @@ class Luna private constructor(config: Config) {
 
                     mConnectionState = WebsocketClient.ConnectionState.ERRORED
                     mWebsocket = null
-                    connect(); //reconnect immediately
+                    connect() // reconnect immediately
 
-                    //notify all observers of errors
-                    mObservers.forEach {wsListener ->
-                        wsListener.value.onError(error)
+                    // notify all observers of errors
+                    mObservers.forEach {(_, value) ->
+                        value.onError(error)
                     }
                 }
 
@@ -76,26 +86,30 @@ class Luna private constructor(config: Config) {
                 }
             }))
         }catch (e: Exception) {
-            L.fine(e.message!!)
+
         }
     }
 
-    public fun registerObserver(key: String, listener: WsListener) {
+    // add an observer
+    fun registerObserver(key: String, listener: WsListener) {
 
-        if (mObservers.get(key) == null) {
-            mObservers.put(key, listener)
+        if (mObservers[key] == null) {
+            mObservers[key] = listener
         }
     }
 
-    public fun unRegisterObserver(key: String) {
-
+    // remove an observer
+    fun unRegisterObserver(key: String) {
         mObservers.remove(key)
     }
 
-    public fun send(data: String) {
+    // send message to websocket server
+    fun send(data: String): Boolean? {
 
-        try {
+        return try {
             mWebsocket?.send(data)
-        }catch (e: Exception) {}
+        }catch (e: Exception) {
+            return false
+        }
     }
 }

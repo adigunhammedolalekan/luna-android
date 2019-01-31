@@ -2,31 +2,26 @@ package com.luna.chat.luna
 
 import com.google.gson.Gson
 
+typealias ChannelListener = (String?) -> Unit
+
+
 class Channel(path: String) {
 
     var mPath: String = path
-    var mListener: Listener? = null
+    var channelListener: ChannelListener = {}
 
     init {
         subscribe()
     }
 
-    interface Listener {
-        fun onMessage(data: String?)
-    }
-
-    public fun listener(listener: Listener) {
-        mListener = listener
-    }
-
     private fun subscribe() {
 
-        val message = WsMessage<Any>("subscribe", mPath, Any());
+        val message = WsMessage("subscribe", mPath, Any())
         val json = Gson().toJson(message)
 
-        Luna.instance?.registerObserver(mPath, object: WsListener {
+        Luna.getInstance().registerObserver(mPath, object: WsListener {
             override fun onMessage(data: String?) {
-                mListener?.onMessage(data)
+                channelListener.invoke(data)
             }
 
             override fun onConnect() {}
@@ -34,18 +29,18 @@ class Channel(path: String) {
             override fun onError(error: LunaError) {}
 
         })
-        Luna.instance?.send(json)
+        Luna.getInstance().send(json)
     }
 
-    public fun sendMessage(data: Any) {
+    fun sendMessage(data: Any) {
 
-        val message = WsMessage<Any>("message", mPath, data)
+        val message = WsMessage("message", mPath, data)
         val json = Gson().toJson(message)
 
-        Luna.instance?.send(json)
+        Luna.getInstance().send(json)
     }
 
-    public fun unSubscribe() {
-        Luna.instance?.unRegisterObserver(mPath)
+    fun unSubscribe() {
+        Luna.getInstance().unRegisterObserver(mPath)
     }
 }
