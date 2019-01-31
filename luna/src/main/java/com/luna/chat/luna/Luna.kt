@@ -23,6 +23,11 @@ class Luna private constructor(config: Config) {
 
         private lateinit var INSTANCE: Luna
         fun create(config: Config) {
+
+            if (config.getURL() == "") {
+                throw IllegalArgumentException("URL should not be empty")
+            }
+
             if (INSTANCE == null) {
 
                 synchronized(this) {
